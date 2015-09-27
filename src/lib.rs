@@ -62,11 +62,6 @@ impl Board {
 }
 
 #[test]
-fn it_works() {
-    assert!(true);
-}
-
-#[test]
 fn it_initializes_an_empty_board() {
     let board = Board::default();
 
