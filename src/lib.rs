@@ -87,7 +87,7 @@ impl Board {
         match self.board[x][y] {
             None => {
                 let yips = ALL_DIRECTIONS.iter()
-                    .map(|ref d| self.raytrace(x, y, &d, self.current_player))
+                    .map(|ref d| self.raytrace(&Coordinates { x: x, y: y }, &d, self.current_player))
                     .fold(false, |acc, item| acc || item);
 
                 if yips {
@@ -105,16 +105,20 @@ impl Board {
         coordinates.x < 8 && coordinates.y < 8
     }
 
-    fn raytrace(self: &Self, x: usize, y: usize, direction: &Direction, player: Player) -> bool {
-        let mut found = 0;
-        let mut c = Coordinates { x: x, y: y }.forward(&direction); // burrito monad
+    fn check_position_against_player(self: &Self, c: &Coordinates, player: Player) -> bool {
+        self.within_bounds(c) && self.position(c.x, c.y).and_then(|p| Some(p == player)).unwrap_or(false)
+    }
 
-        while self.within_bounds(&c) && self.position(c.x, c.y).and_then(|p| Some(p == self.other(player))).unwrap_or(false) {
+    fn raytrace(self: &Self, c: &Coordinates, direction: &Direction, player: Player) -> bool {
+        let mut found = 0;
+        let mut c = c.forward(&direction); // burrito monad
+
+        while self.check_position_against_player(&c, self.other(player)) {
            found += 1;
            c = c.forward(&direction);
         }
 
-        found > 0 && self.within_bounds(&c) && self.position(c.x, c.y).and_then(|p| Some(p == player)).unwrap_or(false)
+        found > 0 && self.check_position_against_player(&c, player)
     }
 
     pub fn make_move(self: &mut Self, x: usize, y: usize) -> Result<Player,MoveError> {
@@ -224,5 +228,5 @@ fn it_returns_other_player() {
 fn it_raytraces() {
     let board = Board::default();
 
-    assert!(board.raytrace(5, 4, &Direction::West, Player::Alice));
+    assert!(board.raytrace(&Coordinates { x: 5, y: 4 }, &Direction::West, Player::Alice));
 }
