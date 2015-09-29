@@ -8,8 +8,43 @@ type Position = Option<Player>;
 
 #[derive(Debug)]
 enum MoveError {
-    NonEmptyPosition
+    NonEmptyPosition,
+    InvalidPosition
 }
+
+struct Coordinates {
+    x: usize,
+    y: usize
+}
+
+impl Coordinates {
+    pub fn forward(self: &Self, direction: &Direction) -> Coordinates {
+        match *direction {
+            Direction::North => { Coordinates { x: self.x, y: self.y + 1 } },
+            Direction::South => { Coordinates { x: self.x, y: self.y - 1 } },
+            Direction::East => { Coordinates { x: self.x + 1, y: self.y } },
+            Direction::West => { Coordinates { x: self.x - 1, y: self.y } },
+            Direction::Northwest => { Coordinates { x: self.x - 1, y: self.y + 1 } },
+            Direction::Northeast => { Coordinates { x: self.x + 1, y: self.y + 1 } },
+            Direction::Southwest => { Coordinates { x: self.x - 1, y: self.y - 1 } },
+            Direction::Southeast => { Coordinates { x: self.x + 1, y: self.y - 1 } }
+        }
+    }
+}
+
+enum Direction {
+    North,
+    South,
+    East,
+    West,
+    Northwest,
+    Northeast,
+    Southwest,
+    Southeast
+}
+
+static ALL_DIRECTIONS: [Direction; 8] = [Direction::North, Direction::South, Direction::East, Direction::West,
+         Direction::Northwest, Direction::Northeast, Direction::Southwest, Direction::Southeast];
 
 #[derive(Clone, Debug)]
 struct Board {
@@ -24,40 +59,83 @@ impl Default for Board {
             board: [[None; 8]; 8]
         };
 
-        if let Ok(_) = board.make_move(3, 3) {};
-        if let Ok(_) = board.make_move(3, 4) {};
-        if let Ok(_) = board.make_move(4, 4) {};
-        if let Ok(_) = board.make_move(4, 3) {};
+        board.set_position(3, 4, Player::Alice);
+        board.set_position(4, 4, Player::Bob);
+        board.set_position(3, 3, Player::Bob);
+        board.set_position(4, 3, Player::Alice);
 
         board
     }
 }
 
 impl Board {
+    // TODO: create a Move object, instead of passing x,y everywhere
+    //       or rename Position to CellState and use Position to represent x,y
+
+    fn other(self: &Self, p : Player) -> Player {
+        match p {
+            Player::Alice => Player::Bob,
+            Player::Bob => Player::Alice
+        }
+    }
+
     fn change_player(self: &mut Self) {
-      match self.current_player {
-          Player::Alice => self.current_player = Player::Bob,
-          Player::Bob => self.current_player = Player::Alice
-      };
+        self.current_player = self.other(self.current_player);
+    }
+
+    pub fn is_valid_move(self: &Self, x: usize, y: usize) -> Result<Player,MoveError> {
+        match self.board[x][y] {
+            None => {
+                let yips = ALL_DIRECTIONS.iter()
+                    .map(|ref d| self.raytrace(x, y, &d, self.current_player))
+                    .fold(false, |acc, item| acc || item);
+
+                if yips {
+                    Ok(self.current_player)
+                } else {
+                    Err(MoveError::InvalidPosition)
+                }
+
+            },
+            _ => Err(MoveError::NonEmptyPosition)
+        }
+    }
+
+    fn within_bounds(self: &Self, coordinates: &Coordinates) -> bool {
+        coordinates.x < 8 && coordinates.y < 8
+    }
+
+    fn raytrace(self: &Self, x: usize, y: usize, direction: &Direction, player: Player) -> bool {
+        let mut found = 0;
+        let mut c = Coordinates { x: x, y: y }.forward(&direction); // burrito monad
+
+        while self.within_bounds(&c) && self.position(c.x, c.y).and_then(|p| Some(p == self.other(player))).unwrap_or(false) {
+           found += 1;
+           c = c.forward(&direction);
+        }
+
+        found > 0 && self.within_bounds(&c) && self.position(c.x, c.y).and_then(|p| Some(p == player)).unwrap_or(false)
     }
 
     pub fn make_move(self: &mut Self, x: usize, y: usize) -> Result<Player,MoveError> {
-        let result = match self.board[x][y] {
-            None => {
-                self.board[x][y] = Some(self.current_player);
-                Ok(self.current_player)
-            },
-            _ => Err(MoveError::NonEmptyPosition)
-        };
+        let validity = self.is_valid_move(x, y);
 
-        self.change_player();
+        if let Ok(_) = validity {
+            let p = self.current_player;
+            self.set_position(x, y, p);
+            self.change_player();
+        }
 
-        result
+        validity
     }
 
     // immutable one
     pub fn position(self: &Self, x: usize, y: usize) -> Position {
         self.board[x][y]
+    }
+
+    pub fn set_position(self: &mut Self, x: usize, y: usize, p: Player) {
+        self.board[x][y] = Some(p);
     }
 }
 
@@ -86,10 +164,10 @@ fn it_is_alice_to_move() {
 fn it_initializes_the_center() {
     let board = Board::default();
 
-    assert!(board.position(3, 3).unwrap() == Player::Alice);
-    assert!(board.position(4, 4).unwrap() == Player::Alice);
-    assert!(board.position(3, 4).unwrap() == Player::Bob);
-    assert!(board.position(4, 3).unwrap() == Player::Bob);
+    assert!(board.position(3, 4).unwrap() == Player::Alice);
+    assert!(board.position(4, 3).unwrap() == Player::Alice);
+    assert!(board.position(3, 3).unwrap() == Player::Bob);
+    assert!(board.position(4, 4).unwrap() == Player::Bob);
 }
 
 #[test]
@@ -103,11 +181,48 @@ fn it_does_not_allow_playing_on_an_occuppied_square() {
 }
 
 #[test]
-fn it_allows_playing_on_empty_square() {
+fn it_does_not_allow_playing_unless_it_is_a_valid_move() {
     let mut board = Board::default();
 
-    match board.make_move(0,0) {
+    match board.make_move(5,4) {
         Ok(_) => { assert!(true) }
-        Err(_) => { assert!(false) }
+        _ => { assert!(false) }
     }
+
+    match board.make_move(4,1) {
+        Err(MoveError::InvalidPosition) => { assert!(true) }
+        _ => { assert!(false) }
+    }
+}
+
+
+#[test]
+fn it_changes_player_on_valid_move() {
+    let mut board = Board::default();
+
+    if let Ok(_) = board.make_move(5,4) {};
+    assert!(Player::Bob == board.current_player);
+}
+
+#[test]
+fn it_does_not_change_player_on_invalid_move() {
+    let mut board = Board::default();
+
+    if let Ok(_) = board.make_move(4,4) {};
+    assert!(Player::Alice == board.current_player);
+}
+
+#[test]
+fn it_returns_other_player() {
+    let board = Board::default();
+
+    assert!(Player::Bob == board.other(Player::Alice));
+    assert!(Player::Alice == board.other(Player::Bob));
+}
+
+#[test]
+fn it_raytraces() {
+    let board = Board::default();
+
+    assert!(board.raytrace(5, 4, &Direction::West, Player::Alice));
 }
