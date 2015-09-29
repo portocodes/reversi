@@ -59,10 +59,10 @@ impl Default for Board {
             board: [[None; 8]; 8]
         };
 
-        board.set_position(3, 4, Player::Alice);
-        board.set_position(4, 4, Player::Bob);
-        board.set_position(3, 3, Player::Bob);
-        board.set_position(4, 3, Player::Alice);
+        board.set_position(&Coordinates { x: 3, y: 4 }, Player::Alice);
+        board.set_position(&Coordinates { x: 4, y: 4 }, Player::Bob);
+        board.set_position(&Coordinates { x: 3, y: 3 }, Player::Bob);
+        board.set_position(&Coordinates { x: 4, y: 3 }, Player::Alice);
 
         board
     }
@@ -83,11 +83,11 @@ impl Board {
         self.current_player = self.other(self.current_player);
     }
 
-    pub fn is_valid_move(self: &Self, x: usize, y: usize) -> Result<Player,MoveError> {
-        match self.board[x][y] {
+    pub fn is_valid_move(self: &Self, c: &Coordinates) -> Result<Player,MoveError> {
+        match self.board[c.x][c.y] {
             None => {
                 let yips = ALL_DIRECTIONS.iter()
-                    .map(|ref d| self.raytrace(&Coordinates { x: x, y: y }, &d, self.current_player))
+                    .map(|ref d| self.raytrace(c, &d, self.current_player))
                     .fold(false, |acc, item| acc || item);
 
                 if yips {
@@ -106,7 +106,7 @@ impl Board {
     }
 
     fn check_position_against_player(self: &Self, c: &Coordinates, player: Player) -> bool {
-        self.within_bounds(c) && self.position(c.x, c.y).and_then(|p| Some(p == player)).unwrap_or(false)
+        self.within_bounds(c) && self.position(c).and_then(|p| Some(p == player)).unwrap_or(false)
     }
 
     fn raytrace(self: &Self, c: &Coordinates, direction: &Direction, player: Player) -> bool {
@@ -122,24 +122,25 @@ impl Board {
     }
 
     pub fn make_move(self: &mut Self, x: usize, y: usize) -> Result<Player,MoveError> {
-        let validity = self.is_valid_move(x, y);
+        let c = Coordinates { x: x, y: y };
+
+        let validity = self.is_valid_move(&c);
 
         if let Ok(_) = validity {
             let p = self.current_player;
-            self.set_position(x, y, p);
+            self.set_position(&c, p);
             self.change_player();
         }
 
         validity
     }
 
-    // immutable one
-    pub fn position(self: &Self, x: usize, y: usize) -> Position {
-        self.board[x][y]
+    pub fn position(self: &Self, c: &Coordinates) -> Position {
+        self.board[c.x][c.y]
     }
 
-    pub fn set_position(self: &mut Self, x: usize, y: usize, p: Player) {
-        self.board[x][y] = Some(p);
+    pub fn set_position(self: &mut Self, c: &Coordinates, p: Player) {
+        self.board[c.x][c.y] = Some(p);
     }
 }
 
@@ -168,10 +169,10 @@ fn it_is_alice_to_move() {
 fn it_initializes_the_center() {
     let board = Board::default();
 
-    assert!(board.position(3, 4).unwrap() == Player::Alice);
-    assert!(board.position(4, 3).unwrap() == Player::Alice);
-    assert!(board.position(3, 3).unwrap() == Player::Bob);
-    assert!(board.position(4, 4).unwrap() == Player::Bob);
+    assert!(board.position(&Coordinates { x: 3, y: 4 }).unwrap() == Player::Alice);
+    assert!(board.position(&Coordinates { x: 4, y: 3 }).unwrap() == Player::Alice);
+    assert!(board.position(&Coordinates { x: 3, y: 3 }).unwrap() == Player::Bob);
+    assert!(board.position(&Coordinates { x: 4, y: 4 }).unwrap() == Player::Bob);
 }
 
 #[test]
