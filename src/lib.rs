@@ -12,6 +12,7 @@ enum MoveError {
     InvalidPosition
 }
 
+#[derive(Copy, Clone, Debug)]
 struct Coordinates {
     x: usize,
     y: usize
@@ -86,8 +87,9 @@ impl Board {
     pub fn is_valid_move(self: &Self, c: &Coordinates) -> Result<Player,MoveError> {
         match self.board[c.x][c.y] {
             None => {
+                let mut v = Vec::new();
                 let yips = ALL_DIRECTIONS.iter()
-                    .map(|ref d| self.raytrace(c, &d, self.current_player))
+                    .map(|ref d| self.raytrace(&mut v, c, &d, self.current_player))
                     .fold(false, |acc, item| acc || item);
 
                 if yips {
@@ -109,13 +111,14 @@ impl Board {
         self.within_bounds(c) && self.position(c).and_then(|p| Some(p == player)).unwrap_or(false)
     }
 
-    fn raytrace(self: &Self, c: &Coordinates, direction: &Direction, player: Player) -> bool {
+    fn raytrace(self: &Self, cs: &mut Vec<Coordinates>, c: &Coordinates, direction: &Direction, player: Player) -> bool {
         let mut found = 0;
         let mut c = c.forward(&direction); // burrito monad
 
         while self.check_position_against_player(&c, self.other(player)) {
-           found += 1;
-           c = c.forward(&direction);
+            cs.push(c);
+            found += 1;
+            c = c.forward(&direction);
         }
 
         found > 0 && self.check_position_against_player(&c, player)
@@ -228,11 +231,19 @@ fn it_returns_other_player() {
 #[test]
 fn it_raytraces() {
     let board = Board::default();
+    let mut cs = Vec::new();
 
-    assert!(board.raytrace(&Coordinates { x: 5, y: 4 }, &Direction::West, Player::Alice));
+    assert!(board.raytrace(&mut cs, &Coordinates { x: 5, y: 4 }, &Direction::West, Player::Alice));
+    
+   match cs.first() {
+       Some(c) => {
+         assert!(4 == c.x);
+         assert!(4 == c.y);
+       },
+       None => assert!(false)
+   }
 }
 
-#[test]
 fn it_flips_a_single_piece() {
     let mut board = Board::default();
     let flipped_piece = Coordinates { x: 4, y: 4 };
