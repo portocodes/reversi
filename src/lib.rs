@@ -276,11 +276,13 @@ fn it_flips_a_single_piece() {
     let flipped_piece = Coordinates { x: 4, y: 4 };
 
     if let Ok(_) = board.make_move(5,4) {};
-
     println!("{}", board);
 
     match board.position(&flipped_piece).unwrap() {
         Player::Alice => assert!(true),
         _ => assert!(false, "Piece should be flipped.")
     }
+    
+    if let Ok(_) = board.make_move(5,5) {};
+    println!("{}", board);
 }
