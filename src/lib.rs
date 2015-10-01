@@ -109,14 +109,13 @@ impl Board {
     pub fn is_valid_move(self: &Self, cs: &mut Vec<Coordinates>, c: &Coordinates) -> Result<Player,MoveError> {
         match self.board[c.x][c.y] {
             None => {
-                let yips = ALL_DIRECTIONS.iter()
-                    .map(|ref d| self.raytrace(cs, c, &d, self.current_player))
-                    .fold(false, |acc, item| acc || item);
+               cs.extend(ALL_DIRECTIONS.iter()
+                    .flat_map(|ref d| self.raytrace(c, &d, self.current_player)));
 
-                if yips {
-                    Ok(self.current_player)
-                } else {
+                if cs.is_empty() {
                     Err(MoveError::InvalidPosition)
+                } else {
+                    Ok(self.current_player)
                 }
 
             },
@@ -132,17 +131,22 @@ impl Board {
         self.within_bounds(c) && self.position(c).and_then(|p| Some(p == player)).unwrap_or(false)
     }
 
-    fn raytrace(self: &Self, cs: &mut Vec<Coordinates>, c: &Coordinates, direction: &Direction, player: Player) -> bool {
+    fn raytrace(self: &Self, c: &Coordinates, direction: &Direction, player: Player) -> Vec<Coordinates> {
         let mut found = 0;
         let mut c = c.forward(&direction); // burrito monad
+        let mut csgo: Vec<Coordinates> = Vec::new();
 
         while self.check_position_against_player(&c, self.other(player)) {
-            cs.push(c);
+            csgo.push(c);
             found += 1;
             c = c.forward(&direction);
         }
 
-        found > 0 && self.check_position_against_player(&c, player)
+        if found > 0 && self.check_position_against_player(&c, player) {
+            csgo
+        } else {
+            vec![]
+        }
     }
 
     pub fn make_move(self: &mut Self, x: usize, y: usize) -> Result<Player,MoveError> {
@@ -257,9 +261,9 @@ fn it_returns_other_player() {
 #[test]
 fn it_raytraces() {
     let board = Board::default();
-    let mut cs = Vec::new();
+    let cs = board.raytrace(&Coordinates { x: 5, y: 4 }, &Direction::West, Player::Alice);
 
-    assert!(board.raytrace(&mut cs, &Coordinates { x: 5, y: 4 }, &Direction::West, Player::Alice));
+    assert!(!cs.is_empty());
 
     match cs.first() {
         Some(c) => {
@@ -282,7 +286,7 @@ fn it_flips_a_single_piece() {
         Player::Alice => assert!(true),
         _ => assert!(false, "Piece should be flipped.")
     }
-    
+
     if let Ok(_) = board.make_move(5,5) {};
     println!("{}", board);
 }
