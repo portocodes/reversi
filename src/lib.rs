@@ -106,16 +106,17 @@ impl Board {
         self.current_player = self.other(self.current_player);
     }
 
-    pub fn is_valid_move(self: &Self, cs: &mut Vec<Coordinates>, c: &Coordinates) -> Result<Player,MoveError> {
+    pub fn is_valid_move(self: &Self, c: &Coordinates) -> Result<Vec<Coordinates>,MoveError> {
         match self.board[c.x][c.y] {
             None => {
-               cs.extend(ALL_DIRECTIONS.iter()
-                    .flat_map(|ref d| self.raytrace(c, &d, self.current_player)));
+                let cs: Vec<Coordinates> = ALL_DIRECTIONS.iter()
+                    .flat_map(|ref d| self.raytrace(c, &d, self.current_player))
+                    .collect();
 
                 if cs.is_empty() {
                     Err(MoveError::InvalidPosition)
                 } else {
-                    Ok(self.current_player)
+                    Ok(cs)
                 }
 
             },
@@ -150,12 +151,12 @@ impl Board {
     }
 
     pub fn make_move(self: &mut Self, x: usize, y: usize) -> Result<Player,MoveError> {
-        let mut cs: Vec<Coordinates> = Vec::new();
         let c = Coordinates { x: x, y: y };
 
-        let validity = self.is_valid_move(&mut cs, &c);
+        let validity = self.is_valid_move(&c);
 
-        if let Ok(_) = validity {
+        match validity {
+          Ok(cs) => {
             let p = self.current_player;
             self.set_position(&c, p);
             self.change_player();
@@ -163,9 +164,11 @@ impl Board {
             for c in cs {
                 self.set_position(&c, p);
             }
-        }
 
-        validity
+            Ok(self.current_player)
+          },
+          Err(x) => Err(x)
+        }
     }
 
     pub fn position(self: &Self, c: &Coordinates) -> Position {
