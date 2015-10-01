@@ -1,3 +1,5 @@
+use std::fmt;
+
 #[derive(Copy, Clone, Debug, PartialEq)]
 enum Player {
     Alice,
@@ -66,6 +68,26 @@ impl Default for Board {
         board.set_position(&Coordinates { x: 4, y: 3 }, Player::Alice);
 
         board
+    }
+}
+
+impl fmt::Display for Board {
+    fn fmt(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
+        write!(formatter, "x -> first player; y -> second player\n\n");
+
+        for row in self.board.iter() {
+            for cell in row.iter() {
+                write!(formatter, " {} ", match *cell {
+                    None => "-",
+                    Some(Player::Alice) => "x",
+                    Some(Player::Bob) => "y"
+                });
+            }
+
+            write!(formatter, "\n");
+        }
+
+        write!(formatter, "")
     }
 }
 
@@ -248,11 +270,14 @@ fn it_raytraces() {
     }
 }
 
+#[test]
 fn it_flips_a_single_piece() {
     let mut board = Board::default();
     let flipped_piece = Coordinates { x: 4, y: 4 };
 
     if let Ok(_) = board.make_move(5,4) {};
+
+    println!("{}", board);
 
     match board.position(&flipped_piece).unwrap() {
         Player::Alice => assert!(true),
