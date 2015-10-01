@@ -84,12 +84,11 @@ impl Board {
         self.current_player = self.other(self.current_player);
     }
 
-    pub fn is_valid_move(self: &Self, c: &Coordinates) -> Result<Player,MoveError> {
+    pub fn is_valid_move(self: &Self, cs: &mut Vec<Coordinates>, c: &Coordinates) -> Result<Player,MoveError> {
         match self.board[c.x][c.y] {
             None => {
-                let mut v = Vec::new();
                 let yips = ALL_DIRECTIONS.iter()
-                    .map(|ref d| self.raytrace(&mut v, c, &d, self.current_player))
+                    .map(|ref d| self.raytrace(cs, c, &d, self.current_player))
                     .fold(false, |acc, item| acc || item);
 
                 if yips {
@@ -125,14 +124,19 @@ impl Board {
     }
 
     pub fn make_move(self: &mut Self, x: usize, y: usize) -> Result<Player,MoveError> {
+        let mut cs: Vec<Coordinates> = Vec::new();
         let c = Coordinates { x: x, y: y };
 
-        let validity = self.is_valid_move(&c);
+        let validity = self.is_valid_move(&mut cs, &c);
 
         if let Ok(_) = validity {
             let p = self.current_player;
             self.set_position(&c, p);
             self.change_player();
+
+            for c in cs {
+                self.set_position(&c, p);
+            }
         }
 
         validity
@@ -234,22 +238,22 @@ fn it_raytraces() {
     let mut cs = Vec::new();
 
     assert!(board.raytrace(&mut cs, &Coordinates { x: 5, y: 4 }, &Direction::West, Player::Alice));
-    
-   match cs.first() {
-       Some(c) => {
-         assert!(4 == c.x);
-         assert!(4 == c.y);
-       },
-       None => assert!(false)
-   }
+
+    match cs.first() {
+        Some(c) => {
+            assert!(4 == c.x);
+            assert!(4 == c.y);
+        },
+        None => assert!(false)
+    }
 }
 
 fn it_flips_a_single_piece() {
     let mut board = Board::default();
     let flipped_piece = Coordinates { x: 4, y: 4 };
-    
+
     if let Ok(_) = board.make_move(5,4) {};
-    
+
     match board.position(&flipped_piece).unwrap() {
         Player::Alice => assert!(true),
         _ => assert!(false, "Piece should be flipped.")
