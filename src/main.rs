@@ -2,12 +2,12 @@ extern crate reversi;
 
 use std::io;
 use std::io::Write;
-use reversi::{Board};
+use reversi::{Game};
 
 fn main() {
     let mut stdin = io::stdin();
     let input = &mut String::new();
-    let mut board = Board::default();
+    let mut board = Game::default();
     
 
     //while !board.finished() {

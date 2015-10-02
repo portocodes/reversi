@@ -50,14 +50,14 @@ static ALL_DIRECTIONS: [Direction; 8] = [Direction::North, Direction::South, Dir
          Direction::Northwest, Direction::Northeast, Direction::Southwest, Direction::Southeast];
 
 #[derive(Clone, Debug)]
-pub struct Board {
+pub struct Game {
     current_player: Player,
     board: [[Position; 8]; 8]
 }
 
-impl Default for Board {
+impl Default for Game {
     fn default() -> Self {
-        let mut board = Board {
+        let mut board = Game {
             current_player: Player::Alice,
             board: [[None; 8]; 8]
         };
@@ -71,7 +71,7 @@ impl Default for Board {
     }
 }
 
-impl fmt::Display for Board {
+impl fmt::Display for Game {
     fn fmt(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
         write!(formatter, "x -> first player; y -> second player\n\n");
 
@@ -91,7 +91,7 @@ impl fmt::Display for Board {
     }
 }
 
-impl Board {
+impl Game {
     // TODO: create a Move object, instead of passing x,y everywhere
     //       or rename Position to CellState and use Position to represent x,y
 
@@ -186,7 +186,7 @@ impl Board {
 
 #[test]
 fn it_initializes_an_empty_board() {
-    let board = Board::default();
+    let board = Game::default();
 
     assert!(board.board.len() == 8, "Board should be 8x8.");
 
@@ -197,7 +197,7 @@ fn it_initializes_an_empty_board() {
 
 #[test]
 fn it_is_alice_to_move() {
-    let board = Board::default();
+    let board = Game::default();
 
     match board.current_player {
         Player::Alice => { assert!(true) },
@@ -207,7 +207,7 @@ fn it_is_alice_to_move() {
 
 #[test]
 fn it_initializes_the_center() {
-    let board = Board::default();
+    let board = Game::default();
 
     assert!(board.position(&Coordinates { x: 3, y: 4 }).unwrap() == Player::Alice);
     assert!(board.position(&Coordinates { x: 4, y: 3 }).unwrap() == Player::Alice);
@@ -217,7 +217,7 @@ fn it_initializes_the_center() {
 
 #[test]
 fn it_does_not_allow_playing_on_an_occuppied_square() {
-    let mut board = Board::default();
+    let mut board = Game::default();
 
     match board.make_move(3,3) {
         Err(MoveError::NonEmptyPosition) => { assert!(true) }
@@ -227,7 +227,7 @@ fn it_does_not_allow_playing_on_an_occuppied_square() {
 
 #[test]
 fn it_does_not_allow_playing_unless_it_is_a_valid_move() {
-    let mut board = Board::default();
+    let mut board = Game::default();
 
     match board.make_move(5,4) {
         Ok(_) => { assert!(true) }
@@ -243,7 +243,7 @@ fn it_does_not_allow_playing_unless_it_is_a_valid_move() {
 
 #[test]
 fn it_changes_player_on_valid_move() {
-    let mut board = Board::default();
+    let mut board = Game::default();
 
     if let Ok(_) = board.make_move(5,4) {};
     assert!(Player::Bob == board.current_player);
@@ -251,7 +251,7 @@ fn it_changes_player_on_valid_move() {
 
 #[test]
 fn it_does_not_change_player_on_invalid_move() {
-    let mut board = Board::default();
+    let mut board = Game::default();
 
     if let Ok(_) = board.make_move(4,4) {};
     assert!(Player::Alice == board.current_player);
@@ -259,7 +259,7 @@ fn it_does_not_change_player_on_invalid_move() {
 
 #[test]
 fn it_returns_other_player() {
-    let board = Board::default();
+    let board = Game::default();
 
     assert!(Player::Bob == board.other(Player::Alice));
     assert!(Player::Alice == board.other(Player::Bob));
@@ -267,7 +267,7 @@ fn it_returns_other_player() {
 
 #[test]
 fn it_raytraces() {
-    let board = Board::default();
+    let board = Game::default();
     let cs = board.raytrace(&Coordinates { x: 5, y: 4 }, &Direction::West, Player::Alice);
 
     assert!(!cs.is_empty());
@@ -283,7 +283,7 @@ fn it_raytraces() {
 
 #[test]
 fn it_flips_a_single_piece() {
-    let mut board = Board::default();
+    let mut board = Game::default();
     let flipped_piece = Coordinates { x: 4, y: 4 };
 
     if let Ok(_) = board.make_move(5,4) {};
