@@ -1,7 +1,7 @@
 use std::fmt;
 
 #[derive(Copy, Clone, Debug, PartialEq)]
-enum Player {
+pub enum Player {
     Alice,
     Bob
 }
@@ -9,7 +9,7 @@ enum Player {
 type Position = Option<Player>;
 
 #[derive(Debug)]
-enum MoveError {
+pub enum MoveError {
     NonEmptyPosition,
     InvalidPosition
 }
@@ -50,7 +50,7 @@ static ALL_DIRECTIONS: [Direction; 8] = [Direction::North, Direction::South, Dir
          Direction::Northwest, Direction::Northeast, Direction::Southwest, Direction::Southeast];
 
 #[derive(Clone, Debug)]
-struct Board {
+pub struct Board {
     current_player: Player,
     board: [[Position; 8]; 8]
 }
@@ -80,7 +80,7 @@ impl fmt::Display for Board {
                 write!(formatter, " {} ", match *cell {
                     None => "-",
                     Some(Player::Alice) => "x",
-                    Some(Player::Bob) => "y"
+                    Some(Player::Bob) => "o"
                 });
             }
 
@@ -106,7 +106,7 @@ impl Board {
         self.current_player = self.other(self.current_player);
     }
 
-    pub fn is_valid_move(self: &Self, c: &Coordinates) -> Result<Vec<Coordinates>,MoveError> {
+    fn is_valid_move(self: &Self, c: &Coordinates) -> Result<Vec<Coordinates>,MoveError> {
         match self.board[c.x][c.y] {
             None => {
                 let cs: Vec<Coordinates> = ALL_DIRECTIONS.iter()
@@ -150,6 +150,10 @@ impl Board {
         }
     }
 
+    pub fn finished(self: &Self) -> bool {
+        true
+    }
+
     pub fn make_move(self: &mut Self, x: usize, y: usize) -> Result<Player,MoveError> {
         let c = Coordinates { x: x, y: y };
 
@@ -171,11 +175,11 @@ impl Board {
         }
     }
 
-    pub fn position(self: &Self, c: &Coordinates) -> Position {
+    fn position(self: &Self, c: &Coordinates) -> Position {
         self.board[c.x][c.y]
     }
 
-    pub fn set_position(self: &mut Self, c: &Coordinates, p: Player) {
+    fn set_position(self: &mut Self, c: &Coordinates, p: Player) {
         self.board[c.x][c.y] = Some(p);
     }
 }

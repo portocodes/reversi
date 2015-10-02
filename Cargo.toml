@@ -2,3 +2,7 @@
 name = "reversi"
 version = "0.1.0"
 authors = ["nitrous"]
+
+[[bin]]
+name = "cli"
+path = "src/main.rs"
