@@ -17,6 +17,7 @@ fn main() {
         print!("Player 1> ");
         io::stdout().flush();
         stdin.read_line(input);
+        println!("");
         
         if input == "sext\n" {
             std::process::exit(0)
