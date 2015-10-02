@@ -19,6 +19,10 @@ fn main() {
         stdin.read_line(input);
         println!("");
         
+        if input == "" {
+            println!("Exiting...");
+            std::process::exit(0);
+        }
         if input == "sext\n" {
             std::process::exit(0)
         };
