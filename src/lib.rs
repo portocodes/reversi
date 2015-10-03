@@ -106,11 +106,26 @@ impl Game {
         self.current_player = self.other(self.current_player);
     }
 
-    fn is_valid_move(self: &Self, c: &Coordinates) -> Result<Vec<Coordinates>,MoveError> {
+    fn valid_moves(self: &Self, p: Player) -> Vec<Coordinates> {
+        let mut moves: Vec<Coordinates> = Vec::new();
+
+        for x in 0..8 {
+            for y in 0..8 {
+                let c = Coordinates{x:x, y:y};
+                if let Ok(_) = self.is_valid_move(&c, p) {
+                    moves.push(c)
+                }
+            }
+        }
+
+        moves
+    }
+
+    fn is_valid_move(self: &Self, c: &Coordinates, p: Player) -> Result<Vec<Coordinates>,MoveError> {
         match self.board[c.x][c.y] {
             None => {
                 let cs: Vec<Coordinates> = ALL_DIRECTIONS.iter()
-                    .flat_map(|ref d| self.raytrace(c, &d, self.current_player))
+                    .flat_map(|ref d| self.raytrace(c, &d, p))
                     .collect();
 
                 if cs.is_empty() {
@@ -151,13 +166,14 @@ impl Game {
     }
 
     pub fn finished(self: &Self) -> bool {
-        true
+        self.valid_moves(Player::Alice).is_empty() &&
+          self.valid_moves(Player::Bob).is_empty()
     }
 
     pub fn make_move(self: &mut Self, x: usize, y: usize) -> Result<Player,MoveError> {
         let c = Coordinates { x: x, y: y };
 
-        let validity = self.is_valid_move(&c);
+        let validity = self.is_valid_move(&c, self.current_player);
 
         match validity {
           Ok(cs) => {
@@ -182,10 +198,10 @@ impl Game {
     fn set_position(self: &mut Self, c: &Coordinates, p: Player) {
         self.board[c.x][c.y] = Some(p);
     }
-    
+
     pub fn score(self: &Self) -> [i32; 2] {
         let mut result: [i32; 2] = [0, 0];
-        
+
         for row in self.board.iter() {
             for cell in row.iter() {
                 match *cell {
@@ -195,7 +211,7 @@ impl Game {
                 }
             }
         }
-        
+
         result
     }
 }
@@ -318,7 +334,7 @@ fn it_flips_a_single_piece() {
 fn it_calculates_score_tie() {
     let mut board = Game::default();
     let score: [i32; 2] = board.score();
-    
+
     assert!(2 == score[0]);
     assert!(2 == score[1]);
 }
