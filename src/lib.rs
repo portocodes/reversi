@@ -21,8 +21,16 @@ struct Coordinates {
 }
 
 impl Coordinates {
-    pub fn forward(self: &Self, direction: &Direction) -> Coordinates {
+    // this underflows on -1, but it will never overflow on 8.
+    /// Returns none if you try to go under -1 for either x or y
+    pub fn forward(self: &Self, direction: &Direction) -> Option<Coordinates> {
         match *direction {
+            Direction::South | Direction::Southwest | Direction::Southeast if self.y == 0 => { return None; },
+            Direction::West | Direction::Northwest | Direction::Southwest if self.x == 0 => { return None; },
+            _ => {}
+        }
+
+        let coordinates = match *direction {
             Direction::North => { Coordinates { x: self.x, y: self.y + 1 } },
             Direction::South => { Coordinates { x: self.x, y: self.y - 1 } },
             Direction::East => { Coordinates { x: self.x + 1, y: self.y } },
@@ -31,7 +39,9 @@ impl Coordinates {
             Direction::Northeast => { Coordinates { x: self.x + 1, y: self.y + 1 } },
             Direction::Southwest => { Coordinates { x: self.x - 1, y: self.y - 1 } },
             Direction::Southeast => { Coordinates { x: self.x + 1, y: self.y - 1 } }
-        }
+        };
+
+        Some(coordinates)
     }
 }
 
@@ -143,8 +153,8 @@ impl Game {
         coordinates.x < 8 && coordinates.y < 8
     }
 
-    fn check_position_against_player(self: &Self, c: &Coordinates, player: Player) -> bool {
-        self.within_bounds(c) && self.position(c).and_then(|p| Some(p == player)).unwrap_or(false)
+    fn check_position_against_player(self: &Self, c: Option<Coordinates>, player: Player) -> bool {
+        c.and_then(|c| Some(self.within_bounds(&c) && self.position(&c).and_then(|p| Some(p == player)).unwrap_or(false))).unwrap_or(false)
     }
 
     fn raytrace(self: &Self, c: &Coordinates, direction: &Direction, player: Player) -> Vec<Coordinates> {
@@ -152,13 +162,13 @@ impl Game {
         let mut c = c.forward(&direction); // burrito monad
         let mut csgo: Vec<Coordinates> = Vec::new();
 
-        while self.check_position_against_player(&c, self.other(player)) {
-            csgo.push(c);
+        while self.check_position_against_player(c, self.other(player)) {
+            csgo.push(c.unwrap());
             found += 1;
-            c = c.forward(&direction);
+            c = c.unwrap().forward(&direction);
         }
 
-        if found > 0 && self.check_position_against_player(&c, player) {
+        if found > 0 && self.check_position_against_player(c, player) {
             csgo
         } else {
             vec![]
