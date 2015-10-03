@@ -83,17 +83,16 @@ impl Default for Game {
 
 impl fmt::Display for Game {
     fn fmt(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
-        write!(formatter, "x -> first player; y -> second player\n\n");
+        write!(formatter, "x -> first player; o -> second player\n\n");
 
-        for row in self.board.iter() {
-            for cell in row.iter() {
-                write!(formatter, " {} ", match *cell {
-                    None => "-",
-                    Some(Player::Alice) => "x",
-                    Some(Player::Bob) => "o"
-                });
+        for y in 0..8 {
+            for x in 0..8 {
+                match self.position(&Coordinates{x:x,y:y}) {
+                    None => write!(formatter, " {},{} ", x+1, y+1),
+                    Some(Player::Alice) => write!(formatter, "  {}  ", "x"),
+                    Some(Player::Bob) => write!(formatter, "  {}  ", "o")
+                };
             }
-
             write!(formatter, "\n");
         }
 
