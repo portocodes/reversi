@@ -15,15 +15,15 @@ pub enum MoveError {
 }
 
 #[derive(Copy, Clone, Debug)]
-struct Coordinates {
+struct Coordinate {
     x: usize,
     y: usize
 }
 
-impl Coordinates {
+impl Coordinate {
     // this underflows on -1, but it will never overflow on 8.
     /// Returns none if you try to go under -1 for either x or y
-    pub fn forward(self: &Self, direction: &Direction) -> Option<Coordinates> {
+    pub fn forward(self: &Self, direction: &Direction) -> Option<Coordinate> {
         match *direction {
             Direction::South | Direction::Southwest | Direction::Southeast if self.y == 0 => { return None; },
             Direction::West | Direction::Northwest | Direction::Southwest if self.x == 0 => { return None; },
@@ -31,14 +31,14 @@ impl Coordinates {
         }
 
         let coordinates = match *direction {
-            Direction::North => { Coordinates { x: self.x, y: self.y + 1 } },
-            Direction::South => { Coordinates { x: self.x, y: self.y - 1 } },
-            Direction::East => { Coordinates { x: self.x + 1, y: self.y } },
-            Direction::West => { Coordinates { x: self.x - 1, y: self.y } },
-            Direction::Northwest => { Coordinates { x: self.x - 1, y: self.y + 1 } },
-            Direction::Northeast => { Coordinates { x: self.x + 1, y: self.y + 1 } },
-            Direction::Southwest => { Coordinates { x: self.x - 1, y: self.y - 1 } },
-            Direction::Southeast => { Coordinates { x: self.x + 1, y: self.y - 1 } }
+            Direction::North => { Coordinate { x: self.x, y: self.y + 1 } },
+            Direction::South => { Coordinate { x: self.x, y: self.y - 1 } },
+            Direction::East => { Coordinate { x: self.x + 1, y: self.y } },
+            Direction::West => { Coordinate { x: self.x - 1, y: self.y } },
+            Direction::Northwest => { Coordinate { x: self.x - 1, y: self.y + 1 } },
+            Direction::Northeast => { Coordinate { x: self.x + 1, y: self.y + 1 } },
+            Direction::Southwest => { Coordinate { x: self.x - 1, y: self.y - 1 } },
+            Direction::Southeast => { Coordinate { x: self.x + 1, y: self.y - 1 } }
         };
 
         Some(coordinates)
@@ -72,10 +72,10 @@ impl Default for Game {
             board: [[None; 8]; 8]
         };
 
-        board.set_position(&Coordinates { x: 3, y: 4 }, Player::Alice);
-        board.set_position(&Coordinates { x: 4, y: 4 }, Player::Bob);
-        board.set_position(&Coordinates { x: 3, y: 3 }, Player::Bob);
-        board.set_position(&Coordinates { x: 4, y: 3 }, Player::Alice);
+        board.set_position(&Coordinate { x: 3, y: 4 }, Player::Alice);
+        board.set_position(&Coordinate { x: 4, y: 4 }, Player::Bob);
+        board.set_position(&Coordinate { x: 3, y: 3 }, Player::Bob);
+        board.set_position(&Coordinate { x: 4, y: 3 }, Player::Alice);
 
         board
     }
@@ -87,7 +87,7 @@ impl fmt::Display for Game {
 
         for y in 0..8 {
             for x in 0..8 {
-                match self.position(&Coordinates{x:x,y:y}) {
+                match self.position(&Coordinate{x:x,y:y}) {
                     None => write!(formatter, " {},{} ", x+1, y+1),
                     Some(Player::Alice) => write!(formatter, "  {}  ", "x"),
                     Some(Player::Bob) => write!(formatter, "  {}  ", "o")
@@ -115,12 +115,12 @@ impl Game {
         self.current_player = self.other(self.current_player);
     }
 
-    fn valid_moves(self: &Self, p: Player) -> Vec<Coordinates> {
-        let mut moves: Vec<Coordinates> = Vec::new();
+    fn valid_moves(self: &Self, p: Player) -> Vec<Coordinate> {
+        let mut moves: Vec<Coordinate> = Vec::new();
 
         for x in 0..8 {
             for y in 0..8 {
-                let c = Coordinates{x:x, y:y};
+                let c = Coordinate{x:x, y:y};
                 if let Ok(_) = self.is_valid_move(&c, p) {
                     moves.push(c)
                 }
@@ -130,14 +130,14 @@ impl Game {
         moves
     }
 
-    fn is_valid_move(self: &Self, c: &Coordinates, p: Player) -> Result<Vec<Coordinates>,MoveError> {
+    fn is_valid_move(self: &Self, c: &Coordinate, p: Player) -> Result<Vec<Coordinate>,MoveError> {
         if !self.within_bounds(c) {
             return Err(MoveError::InvalidPosition)
         }
 
         match self.board[c.x][c.y] {
             None => {
-                let cs: Vec<Coordinates> = ALL_DIRECTIONS.iter()
+                let cs: Vec<Coordinate> = ALL_DIRECTIONS.iter()
                     .flat_map(|ref d| self.raytrace(c, &d, p))
                     .collect();
 
@@ -152,18 +152,18 @@ impl Game {
         }
     }
 
-    fn within_bounds(self: &Self, coordinates: &Coordinates) -> bool {
+    fn within_bounds(self: &Self, coordinates: &Coordinate) -> bool {
         coordinates.x < 8 && coordinates.y < 8
     }
 
-    fn check_position_against_player(self: &Self, c: Option<Coordinates>, player: Player) -> bool {
+    fn check_position_against_player(self: &Self, c: Option<Coordinate>, player: Player) -> bool {
         c.and_then(|c| Some(self.within_bounds(&c) && self.position(&c).and_then(|p| Some(p == player)).unwrap_or(false))).unwrap_or(false)
     }
 
-    fn raytrace(self: &Self, c: &Coordinates, direction: &Direction, player: Player) -> Vec<Coordinates> {
+    fn raytrace(self: &Self, c: &Coordinate, direction: &Direction, player: Player) -> Vec<Coordinate> {
         let mut found = 0;
         let mut c = c.forward(&direction); // burrito monad
-        let mut csgo: Vec<Coordinates> = Vec::new();
+        let mut csgo: Vec<Coordinate> = Vec::new();
 
         while self.check_position_against_player(c, self.other(player)) {
             csgo.push(c.unwrap());
@@ -184,7 +184,7 @@ impl Game {
     }
 
     pub fn make_move(self: &mut Self, x: usize, y: usize) -> Result<Player,MoveError> {
-        let c = Coordinates { x: x, y: y };
+        let c = Coordinate { x: x, y: y };
 
         let validity = self.is_valid_move(&c, self.current_player);
 
@@ -204,11 +204,11 @@ impl Game {
         }
     }
 
-    fn position(self: &Self, c: &Coordinates) -> Position {
+    fn position(self: &Self, c: &Coordinate) -> Position {
         self.board[c.x][c.y]
     }
 
-    fn set_position(self: &mut Self, c: &Coordinates, p: Player) {
+    fn set_position(self: &mut Self, c: &Coordinate, p: Player) {
         self.board[c.x][c.y] = Some(p);
     }
 
@@ -258,10 +258,10 @@ fn it_is_alice_to_move() {
 fn it_initializes_the_center() {
     let board = Game::default();
 
-    assert!(board.position(&Coordinates { x: 3, y: 4 }).unwrap() == Player::Alice);
-    assert!(board.position(&Coordinates { x: 4, y: 3 }).unwrap() == Player::Alice);
-    assert!(board.position(&Coordinates { x: 3, y: 3 }).unwrap() == Player::Bob);
-    assert!(board.position(&Coordinates { x: 4, y: 4 }).unwrap() == Player::Bob);
+    assert!(board.position(&Coordinate { x: 3, y: 4 }).unwrap() == Player::Alice);
+    assert!(board.position(&Coordinate { x: 4, y: 3 }).unwrap() == Player::Alice);
+    assert!(board.position(&Coordinate { x: 3, y: 3 }).unwrap() == Player::Bob);
+    assert!(board.position(&Coordinate { x: 4, y: 4 }).unwrap() == Player::Bob);
 }
 
 #[test]
@@ -324,7 +324,7 @@ fn it_returns_other_player() {
 #[test]
 fn it_raytraces() {
     let board = Game::default();
-    let cs = board.raytrace(&Coordinates { x: 5, y: 4 }, &Direction::West, Player::Alice);
+    let cs = board.raytrace(&Coordinate { x: 5, y: 4 }, &Direction::West, Player::Alice);
 
     assert!(!cs.is_empty());
 
@@ -340,7 +340,7 @@ fn it_raytraces() {
 #[test]
 fn it_flips_a_single_piece() {
     let mut board = Game::default();
-    let flipped_piece = Coordinates { x: 4, y: 4 };
+    let flipped_piece = Coordinate { x: 4, y: 4 };
 
     if let Ok(_) = board.make_move(5,4) {};
     println!("{}", board);
