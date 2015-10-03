@@ -10,8 +10,8 @@ fn main() {
     let mut board = Game::default();
     
 
-    //while !board.finished() {
-    loop {
+
+    while !board.finished() {
         input.clear();
         println!("{}", board);
         print!("Player 1> ");
