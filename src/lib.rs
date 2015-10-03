@@ -131,6 +131,10 @@ impl Game {
     }
 
     fn is_valid_move(self: &Self, c: &Coordinates, p: Player) -> Result<Vec<Coordinates>,MoveError> {
+        if !self.within_bounds(c) {
+            return Err(MoveError::InvalidPosition)
+        }
+
         match self.board[c.x][c.y] {
             None => {
                 let cs: Vec<Coordinates> = ALL_DIRECTIONS.iter()
@@ -220,11 +224,11 @@ impl Game {
                 }
             }
         }
-        
+
         // over-the-board rule
         if result[0] == 0 { result[1] == 64; }
         if result[1] == 0 { result[0] == 64; }
-        
+
         result
     }
 }
@@ -300,6 +304,13 @@ fn it_does_not_change_player_on_invalid_move() {
 
     if let Ok(_) = board.make_move(4,4) {};
     assert!(Player::Alice == board.current_player);
+}
+
+#[test]
+fn it_detects_out_of_bounds() {
+    let mut board = Game::default();
+
+    if let Ok(_) = board.make_move(1004,1004) { assert!(false) };
 }
 
 #[test]
