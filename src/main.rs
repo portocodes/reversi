@@ -24,7 +24,7 @@ fn main() {
             std::process::exit(0);
         }
         if input == "sext\n" {
-            std::process::exit(0)
+            break
         };
         
         let coordinates: Vec<&str> = input.trim().split(",").collect();
@@ -43,4 +43,9 @@ fn main() {
         // make move
         // print result
     }
+
+    let score = board.score();
+
+    println!("Game over!");
+    println!("Score was:\n\tPlayer 1 - {}\n\tPlayer 2 - {}", score[0], score[1]);
 }
