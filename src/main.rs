@@ -27,14 +27,19 @@ fn main() {
         };
 
         let coordinates: Vec<&str> = input.trim().split(",").collect();
-        let x = usize::from_str_radix(coordinates.first().unwrap(), 10).unwrap() - 1;
-        let y = usize::from_str_radix(coordinates.last().unwrap(), 10).unwrap() - 1;
-        println!("-> {},{} <-", x,y);
 
-        let blurp = board.make_move(x, y);
+        let uint2coord = |x| usize::from_str_radix(x, 10).ok().and_then(|x| Some(x - 1));
+
+        let blurp = coordinates.first().and_then(|x| uint2coord(x))
+            .and_then(|x|
+                coordinates.last()
+                    .and_then(|y| uint2coord(y))
+                     .and_then(|y| Some((x,y))))
+                       .and_then(|p| board
+                        .make_move(p.0, p.1).ok());
 
         match blurp {
-            Ok(c) => println!("{:?}", c),
+            Some(c) => println!("{:?}", c),
             _ => {}
         };
     }
