@@ -182,6 +182,22 @@ impl Game {
     fn set_position(self: &mut Self, c: &Coordinates, p: Player) {
         self.board[c.x][c.y] = Some(p);
     }
+    
+    pub fn score(self: &Self) -> [i32; 2] {
+        let mut result: [i32; 2] = [0, 0];
+        
+        for row in self.board.iter() {
+            for cell in row.iter() {
+                match *cell {
+                    None => {},
+                    Some(Player::Alice) => { result[0] = result[0] + 1 },
+                    Some(Player::Bob)   => { result[1] = result[1] + 1 }
+                }
+            }
+        }
+        
+        result
+    }
 }
 
 #[test]
@@ -296,4 +312,13 @@ fn it_flips_a_single_piece() {
 
     if let Ok(_) = board.make_move(5,5) {};
     println!("{}", board);
+}
+
+#[test]
+fn it_calculates_score_tie() {
+    let mut board = Game::default();
+    let score: [i32; 2] = board.score();
+    
+    assert!(2 == score[0]);
+    assert!(2 == score[1]);
 }
