@@ -220,7 +220,11 @@ impl Game {
                 }
             }
         }
-
+        
+        // over-the-board rule
+        if result[0] == 0 { result[1] == 64; }
+        if result[1] == 0 { result[0] == 64; }
+        
         result
     }
 }
