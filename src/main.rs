@@ -30,13 +30,13 @@ fn main() {
 
         let uint2coord = |x| usize::from_str_radix(x, 10).ok().and_then(|x| Some(x - 1));
 
-        let blurp = coordinates.first().and_then(|x| uint2coord(x))
+        let blurp = coordinates.first()
+            .and_then(|x| uint2coord(x))
             .and_then(|x|
                 coordinates.last()
                     .and_then(|y| uint2coord(y))
-                     .and_then(|y| Some((x,y))))
-                       .and_then(|p| board
-                        .make_move(p.0, p.1).ok());
+                    .and_then(|y| Some((x,y))))
+            .and_then(|p| board.make_move(p.0, p.1).ok());
 
         match blurp {
             Some(c) => println!("{:?}", c),
