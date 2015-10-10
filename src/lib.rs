@@ -375,3 +375,17 @@ fn it_calculates_score_tie() {
     assert!(2 == score[0]);
     assert!(2 == score[1]);
 }
+
+#[test]
+fn it_finishes() {
+    let mut board = Game::default();
+
+    let moves = [(6,5), (6,6), (6,7), (6,4), (6,3), (5,3), (4,3), (3,5), (2,5)];
+
+    for m in moves.iter() {
+        board.make_move(m.0 - 1, m.1 - 1);
+    }
+
+    assert!(board.finished());
+    assert!([13,0] == board.score());
+}
