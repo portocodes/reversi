@@ -1,5 +1,12 @@
 use std::fmt;
 
+macro_rules! string_concat {
+    ($coll:expr) => {
+        $coll.fold(String::from(""), |a,b| format!("{}{}", a, b))
+    }
+
+}
+
 #[derive(Copy, Clone, Debug, PartialEq)]
 pub enum Player {
     Alice,
@@ -90,15 +97,9 @@ impl fmt::Display for Game {
                 Some(Player::Bob) => "  o  ".to_string()
             };
 
-        let output = (0..8)
-            .map(|y|
-                format!(
-                    "{}\n",
-                    (0..8)
-                      .map(|x| cell_formatter(x, y))
-                      .fold(String::from(""), |a,b| format!("{}{}", a, b))))
-            .fold(String::from(""), |a,b| format!("{}{}", a, b));
-
+        let output = string_concat!((0..8).map(|y|
+            format!( "{}\n", string_concat!((0..8).map(|x| cell_formatter(x, y)))))
+        );
         write!(formatter, "x -> first player; o -> second player\n\n{}", output)
     }
 }
