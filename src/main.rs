@@ -13,7 +13,7 @@ fn main() {
     while !board.finished() {
         input.clear();
         println!("{}", board);
-        print!("Player 1> ");
+        print!("Player {}> ", board.current_player);
         io::stdout().flush();
         stdin.read_line(input);
         println!("");

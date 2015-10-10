@@ -13,6 +13,15 @@ pub enum Player {
     Bob
 }
 
+impl fmt::Display for Player {
+    fn fmt(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
+        match *self {
+            Player::Alice => write!(formatter, "Alice"),
+            Player::Bob => write!(formatter, "Bob")
+        }
+    }
+}
+
 type Position = Option<Player>;
 
 #[derive(Debug)]
@@ -68,7 +77,7 @@ static ALL_DIRECTIONS: [Direction; 8] = [Direction::North, Direction::South, Dir
 
 #[derive(Clone, Debug)]
 pub struct Game {
-    current_player: Player,
+    pub current_player: Player,
     board: [[Position; 8]; 8]
 }
 
