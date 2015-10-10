@@ -5,7 +5,7 @@ use std::io::Write;
 use reversi::{Game};
 
 fn main() {
-    let mut stdin = io::stdin();
+    let stdin = io::stdin();
     let input = &mut String::new();
     let mut board = Game::default();
 
